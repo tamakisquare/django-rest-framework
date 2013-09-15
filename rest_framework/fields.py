@@ -916,8 +916,8 @@ class FileField(WritableField):
         return data
 
     def to_native(self, value):
-        if value is None:
-            return value
+        if not value:
+            return None
         return value.url if self.native_in_url else value.name
 
 class ImageField(FileField):
