@@ -47,7 +47,9 @@ class CreateModelMixin(object):
     Create a model instance.
     """
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.DATA, files=request.FILES)
+        serializer_extra = kwargs.pop('serializer_extra', {})
+        serializer = self.get_serializer(data=request.DATA, files=request.FILES,
+                                         **serializer_extra)
 
         if serializer.is_valid():
             self.pre_save(serializer.object)
@@ -88,12 +90,15 @@ class ListModelMixin(object):
             error_msg = self.empty_error % {'class_name': class_name}
             raise Http404(error_msg)
 
+        serializer_extra = kwargs.pop('serializer_extra', {})
+
         # Switch between paginated or standard style responses
         page = self.paginate_queryset(self.object_list)
         if page is not None:
-            serializer = self.get_pagination_serializer(page)
+            serializer = self.get_pagination_serializer(page, **serializer_extra)
         else:
-            serializer = self.get_serializer(self.object_list, many=True)
+            serializer = self.get_serializer(self.object_list, many=True,
+                                             **serializer_extra)
 
         return Response(serializer.data)
 
@@ -103,8 +108,9 @@ class RetrieveModelMixin(object):
     Retrieve a model instance.
     """
     def retrieve(self, request, *args, **kwargs):
+        serializer_extra = kwargs.pop('serializer_extra', {})
         self.object = self.get_object()
-        serializer = self.get_serializer(self.object)
+        serializer = self.get_serializer(self.object, **serializer_extra)
         return Response(serializer.data)
 
 
@@ -125,8 +131,10 @@ class UpdateModelMixin(object):
             save_kwargs = {'force_update': True}
             success_status_code = status.HTTP_200_OK
 
+        serializer_extra = kwargs.pop('serializer_extra', {})
         serializer = self.get_serializer(self.object, data=request.DATA,
-                                         files=request.FILES, partial=partial)
+                                         files=request.FILES, partial=partial,
+                                         **serializer_extra)
 
         if serializer.is_valid():
             try:
